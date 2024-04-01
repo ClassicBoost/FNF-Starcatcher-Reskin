@@ -66,7 +66,7 @@ class OptionsMenuState extends MusicBeatState
 					['', null],
 					['Downscroll', getFromOption],
 					['Centered Notefield', getFromOption],
-					['Input System', getFromOption],
+					['Ghost Tapping', getFromOption],
 					['Display Accuracy', getFromOption],
 				//	['Skip Text', getFromOption],
 					['', null],
@@ -373,7 +373,7 @@ class OptionsMenuState extends MusicBeatState
 				thisOption.disableX = true;
 				// hardcoded main so it doesnt have scroll
 				if (groupName != 'main')
-					thisOption.isMenuItem = true;
+					thisOption.isMenuItem2 = true;
 				thisOption.alpha = 0.6;
 				newGroup.add(thisOption);
 			}

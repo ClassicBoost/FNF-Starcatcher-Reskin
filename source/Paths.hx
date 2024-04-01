@@ -237,7 +237,7 @@ class Paths
 	}
 
 	inline static public function offsetTxt(key:String, ?library:String) {
-		return getPath('images/characters/$key.txt', TEXT, library);
+		return getPath('images/characters/offsets/$key.txt', TEXT, library);
 	}
 
 	inline static public function json(key:String, ?library:String) {

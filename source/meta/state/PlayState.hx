@@ -136,17 +136,7 @@ class PlayState extends MusicBeatState
 
 	public static var cpuControlled:Bool = false;
 
-	public static var bfcolor1:Int = 102;
-	public static var bfcolor2:Int = 255;
-	public static var bfcolor3:Int = 51;
-
-	public static var dadcolor1:Int = 255;
-	public static var dadcolor2:Int = 0;
-	public static var dadcolor3:Int = 0;
-
 	public static var funnyPhillyGlow:Bool = false;
-
-	public static var uhOh:Bool = false;
 
 	private var healthgain:Float = 1;
 	private var antimashshit:Bool = false;
@@ -162,13 +152,14 @@ class PlayState extends MusicBeatState
 	private var skipCountdown:Bool = false;
 
 	public static var daPixelZoom:Float = 6;
-	private var bopbopbop:Bool = false;
 	public static var determinedChartType:String = "";
 
 	private var scaredAnimationForce:String = "idle";
 	private var scaredBeat:Int = 2;
 
 	private var allowDrain:Bool = false;
+
+	var goodNotePressed:Bool = true; // not to be confused with goodNoteHit
 
 	var causeWhyNot:Bool = false;
 
@@ -254,7 +245,6 @@ class PlayState extends MusicBeatState
 		// determine the chart type here
 		determinedChartType = "FNF";
 
-		uhOh = false;
 		allowDrain = false;
 
 		//
@@ -320,59 +310,6 @@ class PlayState extends MusicBeatState
 		dadOpponent.dance();
 		gf.dance();
 		boyfriend.dance();
-
-		// I know there is an easier way but I'm too lazy
-		if (SONG.player2 == 'bf' || SONG.player2 == 'bf-car' || SONG.player2 == 'bf-pixel') {
-			dadcolor1 = 49;
-			dadcolor2 = 176;
-			dadcolor3 = 209;
-		}
-		else if (SONG.player2 == 'gf') {
-			dadcolor1 = 159;
-			dadcolor2 = 0;
-			dadcolor3 = 74;
-		}
-		else if (SONG.player2 == 'dad') {
-			dadcolor1 = 171;
-			dadcolor2 = 100;
-			dadcolor3 = 202;
-		}
-		else if (SONG.player2 == 'spooky') {
-			dadcolor1 = 102;
-			dadcolor2 = 153;
-			dadcolor3 = 255;
-		}
-		else if (SONG.player2 == 'pico') {
-			dadcolor1 = 179;
-			dadcolor2 = 211;
-			dadcolor3 = 83;
-		}
-		else if (SONG.player2 == 'mom-car' || SONG.player2 == 'mom') {
-			dadcolor1 = 218;
-			dadcolor2 = 0;
-			dadcolor3 = 255;
-		}
-		else if (SONG.player2 == 'senpai') {
-			dadcolor1 = 246;
-			dadcolor2 = 147;
-			dadcolor3 = 255;
-		}
-		else {
-			dadcolor1 = 255;
-			dadcolor2 = 0;
-			dadcolor3 = 0;
-		}
-
-		if (SONG.player1 == 'bf' || SONG.player1 == 'bf-car' || SONG.player1 == 'bf-pixel') {
-			bfcolor1 = 49;
-			bfcolor2 = 176;
-			bfcolor3 = 209;
-		}
-		else {
-			bfcolor1 = 102;
-			bfcolor2 = 255;
-			bfcolor3 = 51;
-		}
 
 		healthgain = 1;
 
@@ -458,17 +395,16 @@ class PlayState extends MusicBeatState
 		uiHUD.visible = true;
 		strumLines.visible = true;
 
+		composerslol = 'Composer(s): Stardust Tunes'; // placeholder
+
 		switch (curSong.toLowerCase())
 		{
 			case 'pico':
 				defaultCamZoom = 1.3;
 				uiHUD.visible = false;
 				strumLines.visible = false;
-				composerslol = 'Composer(s): Stardust Tunes'; // placeholder
 			case 'mil-vibe':
 				composerslol = 'Composer(s): Complex';
-			default:
-				composerslol = 'Composer(s): Stardust Tunes'; // placeholder
 		}
 		songinfonew = new FlxText(0, 0, CoolUtil.dashToSpace(PlayState.SONG.song) + '\n' + composerslol + '\n', 12);
 		songinfonew.setFormat(Paths.font("vcr.ttf"), 40, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
@@ -1093,13 +1029,14 @@ class PlayState extends MusicBeatState
 						Timings.notesHit++;
 					if (Init.trueSettings.get('Hit Sounds'))
 						FlxG.sound.play(Paths.sound('hitsound'), 0.7);
-					uhOh = false;
+
+					goodNotePressed = true;
 					antimashshit = true;
 					enablescore = true;
 					health += 0.04 * healthgain;
 					healthCall(Timings.judgementsMap.get(foundRating)[latedamage]);
 
-					ClassHUD.bopScore();
+					uiHUD.bopScore();
 				} else if (coolNote.isSustainNote) {
 					// call updated accuracy stuffs
 					if (coolNote.parentNote != null) {
@@ -1318,6 +1255,9 @@ class PlayState extends MusicBeatState
 			if (allSicks)
 				allSicks = false;
 
+		if (baseRating == 'miss' && goodNotePressed) // just so hitting a note extremely early/late won't give a miss
+		displayRating("shit", timing);	
+		else
 		displayRating(baseRating, timing);
 		Timings.updateAccuracy(Timings.judgementsMap.get(baseRating)[3]);
 		score = Std.int(Timings.judgementsMap.get(baseRating)[2]);
@@ -1406,12 +1346,14 @@ class PlayState extends MusicBeatState
 		if (((combo > 5) || (combo < 0)) && (gf.animOffsets.exists('sad')))
 			gf.playAnim('sad');
 
+		goodNotePressed = false;
+
 		if (combo > 0)
 			combo = 0; // bitch lmao
 		else
 			combo--;
 
-		if (Init.trueSettings.get('Icon Damage')) uhOh = true;
+		uiHUD.loseUpdate(true);
 
 		// misses
 		songScore -= 10;
@@ -1440,6 +1382,8 @@ class PlayState extends MusicBeatState
 				if (combo < 0)
 					combo = 0;
 				combo += 1;
+
+				uiHUD.loseUpdate(false);
 			}
 			else
 				missNoteCheck(true, direction, character, false, true);
@@ -1590,6 +1534,9 @@ class PlayState extends MusicBeatState
 		trace('new vocal time ${Conductor.songPosition}');
 	}
 
+	var bopbopbop:Bool = false;
+	var tiltScreen:String = '';
+
 	override function stepHit()
 	{
 		super.stepHit();
@@ -1598,137 +1545,144 @@ class PlayState extends MusicBeatState
 		dadOpponent.color = characterColorOverrideLol;
 		gf.color = characterColorOverrideLol;
 
-		if (curSong.toLowerCase() == 'tutorial') {
-			switch (curStep) {
-				case 44:
-					skipCountdown = false;
-					swagCounter = 0;
-					startSecondCountdown();
-			}
-		}
-		if (curSong.toLowerCase() == 'mil') {
-			switch (curStep) {
-				case 288:
-					bopbopbop = true;
-					health = 1;
-					if (Init.trueSettings.get('Flashing Lights'))
-					FlxG.camera.flash(FlxColor.WHITE, 1);
-					if(!Init.trueSettings.get('Reduced Movements')) {
-						FlxG.camera.shake(3, 0.1);
-						camHUD.shake(3, 0.1);
-					}
-					FlxG.sound.play(Paths.sound('meteorhit'), 0.7);
-					allowDrain = true;
-				case 672,800:
-					bopbopbop = true;
-				case 544,784,928:
-					bopbopbop = false;
-			}
-		}
-		if (curSong.toLowerCase() == 'spookeez') {
-			switch (curStep) {
-				case 44:
-					startSecondCountdown();
-				case 1,960:
-					uiHUD.visible = false;
-					strumLines.visible = false;
-				case 64:
-					uiHUD.visible = true;
-					strumLines.visible = true;
-				case 128,192,384,448,704:
-					bopbopbop = true;
-				case 188,320,444,572,956:
-					bopbopbop = false;
-			}
-		}
-		if (curSong.toLowerCase() == 'blammed') {
-			switch (curStep) {
-				case 1:
-					uiHUD.visible = false;
-					strumLines.visible = false;
-				case 128:
-					uiHUD.visible = true;
-					strumLines.visible = true;
-				case 108:
-					startSecondCountdown();
-				case 384:
-					FlxG.camera.flash(FlxColor.BLACK, 1);
-					funnyPhillyGlow = true;
-					dadStrums.visible = false;
-					Stage.phillyMoment();
-					allowDrain = true;
-				case 1024:
-					FlxG.camera.flash(FlxColor.BLACK, 1);
-					funnyPhillyGlow = false;
-					dadStrums.visible = true;
-					uiHUD.visible = false;
-					strumLines.visible = false;
-					allowDrain = false;
-					characterColorOverrideLol = 0xFFFFFFFF;
-			}
-		}
-		if (curSong.toLowerCase() == 'bopeebo') {
-			switch (curStep) {
-				case 268,284,300,316,332,348:
-					boyfriend.playAnim('hey', true);
-					forcebop();
-				case 272,288,304,320,336,352:
-					boyfriend.playAnim('idle', true);
-			}
-		}
-		if (curSong.toLowerCase() == 'astrophile') {
-			switch (curStep) {
-				case 512:
-					bopbopbop = true;
-				case 768:
-					bopbopbop = false;
-			}
-		}
-		if (curSong.toLowerCase() == 'south') {
-			switch (curStep) {
-				case 104:
-					startSecondCountdown();
-				case 256,640:
-					if (Init.trueSettings.get('Flashing Lights'))
+		switch (curSong.toLowerCase()) {
+			case 'tutorial':
+				switch (curStep) {
+					case 44:
+						skipCountdown = false;
+						swagCounter = 0;
+						startSecondCountdown();
+				}
+			case 'high':
+				switch (curStep) {
+					case 415,607:
+						bopbopbop = true;
+					case 544,800:
+						bopbopbop = false;
+				}
+			case 'mil':
+				switch (curStep) {
+					case 288:
+						bopbopbop = true;
+						health = 1;
+						if (Init.trueSettings.get('Flashing Lights'))
 						FlxG.camera.flash(FlxColor.WHITE, 1);
-					Stage.showspacelol();
-					defaultCamZoom = 0.7;
-					dadStrums.visible = false;
-				case 512:
-					if (Init.trueSettings.get('Flashing Lights'))
-						FlxG.camera.flash(FlxColor.WHITE, 1);
-					Stage.hidespacelol();
-					defaultCamZoom = 1.05;
-					dadStrums.visible = true;
-				case 772,780,788,796,804,812,820,836,844,852,860,868,876,884,892:
-					if (Init.trueSettings.get('Flashing Lights'))
-						FlxG.camera.flash(FlxColor.WHITE, 0.25);
-					gf.playAnim('cheer', true);
-					causeWhyNot = true;
-				case 896:
-					if (Init.trueSettings.get('Flashing Lights'))
-						FlxG.camera.flash(FlxColor.WHITE, 1);
-					Stage.hidespacelol();
-					defaultCamZoom = 1.05;
-					uiHUD.visible = false;
-					strumLines.visible = false;
-			}
-		}
-		if (curSong.toLowerCase() == 'pico') {
-			switch (curStep) {
-				case 1:
-
-				case 48,768:
-					defaultCamZoom = 1.05;
-					uiHUD.visible = true;
-					strumLines.visible = true;
-				case 112,114,116,118,120,121,122,123,124,125,126,127,144,160,176,182,186,189,260:
-					forcebop();
-				case 128,320,448,512,704:
-					bopbopbop = true;
-				case 256,384,480,640,800:
-					bopbopbop = false;
-			}
+						if(!Init.trueSettings.get('Reduced Movements')) {
+							FlxG.camera.shake(3, 0.1);
+							camHUD.shake(3, 0.1);
+						}
+						FlxG.sound.play(Paths.soundRandom('stages/stage_blast', 1, 3), 0.7);
+						allowDrain = true;
+					case 671,799:
+						bopbopbop = true;
+						tiltScreen = 'turn';
+					case 544,784,928:
+						tiltScreen = '';
+						bopbopbop = false;
+				}
+			case 'spookeez':
+				switch (curStep) {
+					case 44:
+						startSecondCountdown();
+					case 1,960:
+						uiHUD.visible = false;
+						strumLines.visible = false;
+					case 64:
+						uiHUD.visible = true;
+						strumLines.visible = true;
+					case 127,191,383,447,703:
+						bopbopbop = true;
+						tiltScreen = 'side';
+					case 188,320,444,572,956:
+						bopbopbop = false;
+						tiltScreen = '';
+				}
+			case 'blammed':
+				switch (curStep) {
+					case 1:
+						uiHUD.visible = false;
+						strumLines.visible = false;
+					case 128:
+						uiHUD.visible = true;
+						strumLines.visible = true;
+					case 108:
+						startSecondCountdown();
+					case 384:
+						FlxG.camera.flash(FlxColor.BLACK, 1);
+						funnyPhillyGlow = true;
+						dadStrums.visible = false;
+						Stage.phillyMoment();
+						allowDrain = true;
+					case 1024:
+						FlxG.camera.flash(FlxColor.BLACK, 1);
+						funnyPhillyGlow = false;
+						dadStrums.visible = true;
+						uiHUD.visible = false;
+						strumLines.visible = false;
+						allowDrain = false;
+						characterColorOverrideLol = 0xFFFFFFFF;
+				}
+			case 'bopeebo':
+				switch (curStep) {
+					case 268,284,300,316,332,348:
+						boyfriend.playAnim('hey', true);
+						forcebop();
+					case 272,288,304,320,336,352:
+						boyfriend.playAnim('idle', true);
+				}
+			case 'astrophile':
+				switch (curStep) {
+					case 511:
+						bopbopbop = true;
+					case 768:
+						bopbopbop = false;
+				}
+			case 'south':
+				switch (curStep) {
+					case 104:
+						startSecondCountdown();
+					case 256,640:
+						if (Init.trueSettings.get('Flashing Lights'))
+							FlxG.camera.flash(FlxColor.WHITE, 1);
+						Stage.showspacelol();
+						defaultCamZoom = 0.7;
+						dadStrums.visible = false;
+					case 512:
+						if (Init.trueSettings.get('Flashing Lights'))
+							FlxG.camera.flash(FlxColor.WHITE, 1);
+						Stage.hidespacelol();
+						defaultCamZoom = 1.05;
+						dadStrums.visible = true;
+					case 772,780,788,796,804,812,820,836,844,852,860,868,876,884,892:
+						if (Init.trueSettings.get('Flashing Lights'))
+							FlxG.camera.flash(FlxColor.WHITE, 0.25);
+						gf.playAnim('cheer', true);
+						causeWhyNot = true;
+					case 896:
+						if (Init.trueSettings.get('Flashing Lights'))
+							FlxG.camera.flash(FlxColor.WHITE, 1);
+						Stage.hidespacelol();
+						defaultCamZoom = 1.05;
+						uiHUD.visible = false;
+						strumLines.visible = false;
+				}
+			case 'pico':
+				switch (curStep) {
+					case 1:
+	
+					case 48,768:
+						defaultCamZoom = 1.05;
+						uiHUD.visible = true;
+						strumLines.visible = true;
+					case 112,114,116,118,120,121,122,123,124,125,126,127,144,160,176,182,186,189,260:
+						forcebop();
+					case 128,320,448,512,704:
+						bopbopbop = true;
+						tiltScreen = 'turn';
+					case 256,384,480,640,800:
+						bopbopbop = false;
+						tiltScreen = '';
+				}
 		}
 
 		///*
@@ -1774,22 +1728,38 @@ class PlayState extends MusicBeatState
 	{
 		super.beatHit();
 
-		if (bopbopbop == true) {
-			if ((curBeat % 1 == 0) && (!Init.trueSettings.get('Reduced Movements')))
+		if (!Init.trueSettings.get('Reduced Movements')) {
+			if ((FlxG.camera.zoom < 1.35 && curBeat % (bopbopbop ? 1 : 4) == 0))
 				{
-					FlxG.camera.zoom += 0.025;
+					FlxG.camera.zoom += 0.015;
 					camHUD.zoom += 0.05;
 					for (hud in strumHUD)
 						hud.zoom += 0.05;
 				}
-		}
-		else { // the camera would freak out of the bopbopbop event is on.
-		if ((FlxG.camera.zoom < 1.35 && curBeat % 4 == 0) && (!Init.trueSettings.get('Reduced Movements')))
-			{
-				FlxG.camera.zoom += 0.015;
-				camHUD.zoom += 0.05;
-				for (hud in strumHUD)
-					hud.zoom += 0.05;
+			
+			if (tiltScreen != '') {
+				FlxTween.cancelTweensOf(camHUD);
+				FlxTween.cancelTweensOf(camGame);
+				switch (tiltScreen) {
+					case 'turn':
+						if (curBeat % 2 == 0) {
+							FlxTween.tween(camHUD, {"angle": -2}, 0.25, {ease: FlxEase.cubeOut});
+							FlxTween.tween(camGame, {"angle": -2}, 0.25, {ease: FlxEase.cubeOut});
+						} else {
+							FlxTween.tween(camHUD, {"angle": 2}, 0.25, {ease: FlxEase.cubeOut});
+							FlxTween.tween(camGame, {"angle": 2}, 0.25, {ease: FlxEase.cubeOut});
+						}
+					case 'side':
+						if (curBeat % 2 == 0) {
+							camHUD.angle = -5;
+							camGame.angle = -5;
+						} else {
+							camHUD.angle = 5;
+							camGame.angle = 5;
+						}
+						FlxTween.tween(camHUD, {"angle": 0}, 0.25, {ease: FlxEase.cubeOut});
+						FlxTween.tween(camGame, {"angle": 0}, 0.25, {ease: FlxEase.cubeOut});
+				}
 			}
 		}
 
@@ -1806,8 +1776,6 @@ class PlayState extends MusicBeatState
 		else {
 			bop = 2;
 		}
-
-		uhOh = false;
 
 		if (SONG.notes[Math.floor(curStep / 16)] != null)
 		{

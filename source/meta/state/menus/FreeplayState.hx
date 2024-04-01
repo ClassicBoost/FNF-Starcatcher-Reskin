@@ -23,19 +23,18 @@ import openfl.media.Sound;
 import sys.FileSystem;
 import sys.thread.Mutex;
 import sys.thread.Thread;
-import flixel.addons.display.FlxBackdrop;
 
 using StringTools;
 
 class FreeplayState extends MusicBeatState
 {
 	//
-	var songs:Array<SongMetadata> = [];
+	var songs:Array<SongMetadataOG> = [];
 
 	var selector:FlxText;
 	var curSelected:Int = 0;
 	var curSongPlaying:Int = -1;
-	var curDifficulty:Int = 1;
+	var curDifficulty:Int = 0;
 
 	var scoreText:FlxText;
 	var diffText:FlxText;
@@ -55,10 +54,6 @@ class FreeplayState extends MusicBeatState
 	private var mainColor = FlxColor.WHITE;
 	private var bg:FlxSprite;
 	private var scoreBG:FlxSprite;
-
-	private var isSongPlaying:Bool = false;
-
-	var bgfront:FlxBackdrop;
 
 	private var existingSongs:Array<String> = [];
 	private var existingDifficulties:Array<Array<String>> = [];
@@ -86,8 +81,6 @@ class FreeplayState extends MusicBeatState
 		}
 
 		// */
-
-		isSongPlaying = false;
 
 		for (i in folderSongs)
 		{
@@ -175,7 +168,7 @@ class FreeplayState extends MusicBeatState
 
 		if (coolDifficultyArray.length > 0)
 		{ //*/
-			songs.push(new SongMetadata(songName, weekNum, songCharacter, songColor));
+			songs.push(new SongMetadataOG(songName, weekNum, songCharacter, songColor));
 			existingDifficulties.push(coolDifficultyArray);
 		}
 	}
@@ -227,14 +220,15 @@ class FreeplayState extends MusicBeatState
 
 		if (controls.BACK)
 		{
-			if (isSongPlaying == true) ForeverTools.resetMenuMusic(false, true);
 			threadActive = false;
+			if (curSongPlaying != -1) ForeverTools.resetMenuMusic(false);
 			Main.switchState(this, new MainMenuState());
 		}
 
+		if (curPlaying) Conductor.songPosition = FlxG.sound.music.time;
+
 		if (FlxG.keys.justPressed.SPACE) {
 			changeSongPlaying();
-			Conductor.songPosition += elapsed * 1000;
 			for (i in 0...iconArray.length)	iconArray[i].animation.curAnim.curFrame = 0;
 			
 			iconArray[curSelected].animation.curAnim.curFrame = 2;
@@ -304,7 +298,7 @@ class FreeplayState extends MusicBeatState
 
 	function changeSelection(change:Int = 0)
 	{
-		if (isSongPlaying == false) FlxG.sound.play(Paths.sound('menus/scrollMenu'), 0.4);
+		FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 
 		curSelected += change;
 
@@ -354,6 +348,7 @@ class FreeplayState extends MusicBeatState
 
 	function changeSongPlaying()
 	{
+		curPlaying = true;
 		if (songThread == null)
 		{
 			songThread = Thread.create(function()
@@ -386,8 +381,6 @@ class FreeplayState extends MusicBeatState
 								Conductor.mapBPMChanges(SONG);
 								Conductor.changeBPM(SONG.bpm);
 
-								isSongPlaying = true;
-
 								curSongPlaying = curSelected;
 							}
 							else
@@ -409,13 +402,13 @@ class FreeplayState extends MusicBeatState
 		{
 			super.beatHit();
 	
-			FlxTween.cancelTweensOf(bg);
-			bg.scale.set(1.05, 1.05);
-			FlxTween.tween(bg, {"scale.x": 1, "scale.y": 1}, 0.6, {ease: FlxEase.cubeOut});
+			FlxG.camera.zoom = 1.05;
+			FlxTween.cancelTweensOf(FlxG.camera);
+			FlxTween.tween(FlxG.camera, {zoom: 1}, 0.3, {ease: FlxEase.cubeOut});
 		}
 }
 
-class SongMetadata
+class SongMetadataOG
 {
 	public var songName:String = "";
 	public var week:Int = 0;

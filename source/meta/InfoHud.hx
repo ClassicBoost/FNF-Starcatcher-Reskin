@@ -1,7 +1,5 @@
 package meta;
 
-// import Main;
-import flixel.FlxG;
 import haxe.Timer;
 import openfl.events.Event;
 import openfl.system.System;
@@ -9,103 +7,71 @@ import openfl.text.TextField;
 import openfl.text.TextFormat;
 
 /**
-	This is the infoHud class that is derrived from the default FPS class from haxeflixel.
-	It displays debug information, like frames per second, and active states.
-	Hopefully I can also add memory usage in here (reminder to remove later if I don't know how to)
+	Overlay that displays FPS and memory usage.
+
+	Based on this tutorial:
+	https://keyreal-code.github.io/haxecoder-tutorials/17_displaying_fps_and_memory_usage_using_openfl.html
 **/
 class InfoHud extends TextField
 {
-	// set up variables
-	public static var currentFPS(default, null):Int;
-	public static var memoryUsage:Float;
+	var times:Array<Float> = [];
+	var memPeak:UInt = 0;
 
 	// display info
-	public static var displayFps = true;
-	public static var displayMemory = true;
-	public static var displayExtra = true;
+	static var displayFps = true;
+	static var displayMemory = true;
+	static var displayExtra = true;
 
-	// I also like to set them up so that you can call on them later since they're static
-	// anyways heres some other stuff I didn't write most of this so its just standard fps stuff
-	private var cacheCount:Int;
-	private var currentTime:Float;
-	private var times:Array<Float>;
-	private var display:Bool;
-
-	public function new(x:Float = 10, y:Float = 10, color:Int = 0x000000, hudDisplay:Bool = false)
+	public function new(x:Float, y:Float)
 	{
 		super();
 
-		display = hudDisplay;
-
 		this.x = x;
-		this.y = y;
+		this.y = x;
 
-		currentFPS = 0;
+		autoSize = LEFT;
 		selectable = false;
-		mouseEnabled = false;
-		// might as well have made it comic sans
-		defaultTextFormat = new TextFormat(Paths.font("vcr.ttf"), 16, color);
-		// set text area for the time being
-		width = Main.gameWidth;
-		height = Main.gameHeight;
 
-		text = "FPS: \nState: \nMemory:";
-
-		cacheCount = 0;
-		currentTime = 0;
-		times = [];
-
-		#if flash
-		addEventListener(Event.ENTER_FRAME, function(e)
-		{
-			var time = Lib.getTimer();
-			__enterFrame(time - currentTime);
-		});
-		#end
-	}
-
-	// Event Handlers
-	private #if !flash override #end function __enterFrame(deltaTime:Float):Void
-	{
-		currentTime += deltaTime;
-		times.push(currentTime);
-
-		while (times[0] < currentTime - 1000)
-		{
-			times.shift();
-		}
-
-		// u h
+		defaultTextFormat = new TextFormat(Paths.font("vcr.ttf"), 18, 0xFFFFFF);
 		text = "";
-		if (displayFps)
-		{
-			if (Math.isNaN(FlxG.updateFramerate))
-				currentFPS = Math.round((times.length + cacheCount) / 2);
-			else
-				currentFPS = FlxG.updateFramerate;
-			text += "FPS: " + currentFPS + "\n";
-			cacheCount = times.length;
-		}
-		if (displayExtra)
-			text += "State: " + Main.mainClassState + "\n";
-		if (displayMemory)
-		{
-			memoryUsage = Math.round(System.totalMemory / (1e+6)); // division to convey the memory usage in megabytes
-			text += "Memory: " + memoryUsage + " mb";
-			// mb stands for my bad
-		}
+
+		addEventListener(Event.ENTER_FRAME, update);
 	}
 
-	// be able to call framerates later on
-	public static function getFrames():Float
+	static final intervalArray:Array<String> = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+	public static function getInterval(num:UInt):String
 	{
-		return currentFPS;
+		var size:Float = num;
+		var data = 0;
+		while (size > 1024 && data < intervalArray.length - 1)
+		{
+			data++;
+			size = size / 1024;
+		}
+
+		size = Math.round(size * 100) / 100;
+		return size + " " + intervalArray[data];
 	}
 
-	// and also the amount of memory being used (so you dont destroy someones computer)
-	public static function getMemoryUsage():Float
+	function update(_:Event)
 	{
-		return memoryUsage;
+		var now:Float = Timer.stamp();
+		times.push(now);
+		while (times[0] < now - 1)
+			times.shift();
+
+		var mem = System.totalMemory;
+		if (mem > memPeak)
+			memPeak = mem;
+
+		if (visible)
+		{
+			text = '' // set up the text itself
+				+ (displayFps ? times.length + " FPS\n" : '') // Framerate
+			#if !neko + (displayExtra ? Main.mainClassState + "\n" : '') #end // Current Game State
+			+ (displayMemory ? '${getInterval(mem)} / ${getInterval(memPeak)}\n' : ''); // Current and Total Memory Usage 
+		}
 	}
 
 	public static function updateDisplayInfo(shouldDisplayFps:Bool, shouldDisplayExtra:Bool, shouldDisplayMemory:Bool)

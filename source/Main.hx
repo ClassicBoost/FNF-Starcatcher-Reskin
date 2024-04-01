@@ -69,13 +69,13 @@ class Main extends Sprite
 	public static var gameHeight:Int = 720; // Height of the game in pixels (might be less / more in actual pixels depending on your zoom).
 
 	public static var mainClassState:Class<FlxState> = Init; // Determine the main class state of the game
-	public static var framerate:Int = 144; // How many frames per second the game should run at.
+	public static var framerate:Int = 120; // How many frames per second the game should run at.
 
 	public static var gameVersion:String = '0.3.1';
 	public static var oriVersion:String = '1.0.2';
 
 	var zoom:Float = -1; // If -1, zoom is automatically calculated to fit the window dimensions.
-	var skipSplash:Bool = false; // Whether to skip the flixel splash screen that appears in release mode.
+	var skipSplash:Bool = true; // Whether to skip the flixel splash screen that appears in release mode.
 	var infoCounter:InfoHud; // initialize the heads up display that shows information before creating it.
 
 	// heres gameweeks set up!
@@ -190,7 +190,7 @@ class Main extends Sprite
 		// if you're reading this in the future I've added my own FPS counter below! hopefully...
 		// yeah dw I'm getting started on it fffff
 
-		infoCounter = new InfoHud(10, 3, 0xFFFFFF, true);
+		infoCounter = new InfoHud(0, 0);
 		addChild(infoCounter);
 	}
 

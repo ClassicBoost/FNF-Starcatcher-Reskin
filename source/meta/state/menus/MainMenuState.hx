@@ -209,7 +209,7 @@ class MainMenuState extends MusicBeatState
 
 		if ((controls.ACCEPT) && (!selectedSomethin))
 		{
-			if (curSelected == 1 || curSelected == 2)
+			if (curSelected == 2)
 				FlxG.sound.music.stop();
 			
 			//

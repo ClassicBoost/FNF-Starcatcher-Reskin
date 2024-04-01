@@ -30,7 +30,7 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 {
 	// set up variables and stuff here
 	var infoBar:FlxText; // small side bar like kade engine that tells you engine info
-	var scoreBar:FlxText;
+	public var scoreBar:FlxText;
 
 	var scoreLast:Float = -1;
 	var scoreDisplay:String;
@@ -47,6 +47,8 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 
 	var demoshit:FlxText;
 
+	public var forceLose:Int = 0;
+
 	private var demoSine:Float = 0;
 
 	private var SONG = PlayState.SONG;
@@ -60,7 +62,7 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 
 	var infoDisplay:String = CoolUtil.dashToSpace(PlayState.SONG.song);
 	var diffDisplay:String = CoolUtil.difficultyFromNumber(PlayState.storyDifficulty);
-	var engineDisplay:String = "AXOLOTL ENGINE v" + Main.oriVersion + " (FE v" + Main.gameVersion + ")";
+	var engineDisplay:String = "FOREVER ENGINE v" + Main.gameVersion;
 
 	private var choosenFont:String = 'vcr.ttf';
 
@@ -94,7 +96,7 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 
 		healthBar = new FlxBar(healthBarBG.x + 4, healthBarBG.y + 4, RIGHT_TO_LEFT, Std.int(healthBarBG.width - 8), Std.int(healthBarBG.height - 8));
 		healthBar.scrollFactor.set();
-		healthBar.createFilledBar(FlxColor.fromRGB(PlayState.dadcolor1, PlayState.dadcolor2, PlayState.dadcolor3), FlxColor.fromRGB(PlayState.bfcolor1, PlayState.bfcolor2, PlayState.bfcolor3));
+		healthBar.createFilledBar(PlayState.dadOpponent.barColor, PlayState.boyfriend.barColor);
 	//	healthBar.createFilledBar(0xFFFF0000, 0xFF66FF33);
 		// healthBar
 		add(healthBar);
@@ -176,16 +178,14 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 		// pain, this is like the 7th attempt
 		healthBar.percent = (PlayState.health * 50);
 
-		if (iconBullshit > 1) {
-			iconBullshit -= 0.01;
-		}
+		updateScoreText();
 
-	//	var iconLerp = 0.5;
-	//	iconP1.setGraphicSize(Std.int(FlxMath.lerp(iconP1.initialWidth, iconP1.width, iconLerp)));
-	//	iconP2.setGraphicSize(Std.int(FlxMath.lerp(iconP2.initialWidth, iconP2.width, iconLerp)));
+		if (PlayState.cpuControlled)
+			scoreBar.text = '[BOTPLAY]';
 
-		iconP1.scale.set(iconBullshit, iconBullshit);
-		iconP2.scale.set(iconBullshit, iconBullshit);
+		var iconLerp = 0.85;
+		iconP1.setGraphicSize(Std.int(FlxMath.lerp(iconP1.initialWidth, iconP1.width, iconLerp)));
+		iconP2.setGraphicSize(Std.int(FlxMath.lerp(iconP2.initialWidth, iconP2.width, iconLerp)));
 
 		iconP1.updateHitbox();
 		iconP2.updateHitbox();
@@ -200,7 +200,7 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 		iconP1.x = healthBar.x + (healthBar.width * (FlxMath.remapToRange(healthBar.percent, 0, 100, 100, 0) * 0.01) - iconOffset);
 		iconP2.x = healthBar.x + (healthBar.width * (FlxMath.remapToRange(healthBar.percent, 0, 100, 100, 0) * 0.01)) - (iconP2.width - iconOffset);
 
-		if (PlayState.health <= 0.4 || PlayState.uhOh) {
+		if (PlayState.health <= 0.4 || forceLose > 0) {
 			iconP1.animation.curAnim.curFrame = 1;
 			iconP2.animation.curAnim.curFrame = 2;
 		}
@@ -215,15 +215,6 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 	}
 
 	private final divider:String = ' • ';
-
-	private function tweenIcons():Void
-		{
-			iconP1.scale.set(1.3, 1.3);
-			FlxTween.tween(iconP1, {"scale.x": 1, "scale.y": 1}, Conductor.stepCrochet / 500, {ease: FlxEase.cubeOut});
-			
-			iconP2.scale.set(1.3, 1.3);
-			FlxTween.tween(iconP2, {"scale.x": 1, "scale.y": 1}, Conductor.stepCrochet / 500, {ease: FlxEase.cubeOut});
-		}
 
 	public function updateScoreText()
 	{
@@ -250,7 +241,7 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 			scoreBar.text += divider + 'Rank: ' + Std.string(Timings.returnScoreRating().toUpperCase());
 		}
 
-		scoreBar.x = ((FlxG.width / 2) - (scoreBar.width / 2));
+		scoreBar.screenCenter(X);
 
 		// update counter
 		if (Init.trueSettings.get('Counter') != 'None')
@@ -266,7 +257,11 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 		PlayState.updateRPC(false);
 	}
 
-	public static function bopScore() {
+	public function loseUpdate(missed:Bool = false) {
+		if (Init.trueSettings.get('Icon Damage')) forceLose = (missed ? 4 : 0);
+	}
+
+	public function bopScore() {
 		FlxTween.cancelTweensOf(scoreBar);
 		scoreBar.scale.set(1.075, 1.075);
 		FlxTween.tween(scoreBar, {"scale.x": 1, "scale.y": 1}, 0.25, {ease: FlxEase.cubeOut});
@@ -276,10 +271,12 @@ class ClassHUD extends FlxTypedGroup<FlxBasic>
 	{
 		if (!Init.trueSettings.get('Reduced Movements'))
 		{
-	//	tweenIcons();
-
-		iconBullshit = 1.2;
+			iconP1.setGraphicSize(Std.int(iconP1.width + 30));
+			iconP2.setGraphicSize(Std.int(iconP2.width + 30));
+		
+			iconP1.updateHitbox();
+			iconP2.updateHitbox();
 		}
-		//
+		if (forceLose > 0) forceLose--;
 	}
 }
